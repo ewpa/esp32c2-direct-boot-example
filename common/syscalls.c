@@ -16,6 +16,42 @@ ssize_t _write(int fd, const void * data, size_t size)
     return size;
 }
 
+/* Non-blocking implementation
+ssize_t _read(int fd, void * data, size_t size)
+{
+    (void)fd;
+    char* cdata = (char*) data;
+    size_t received;
+    for (received = 0; received < size; ++received) {
+        int status = uart_rx_one_char((uint8_t*) &cdata[received]);
+        if (status != 0) {
+            break;
+        }
+    }
+    if (received == 0) {
+        errno = EWOULDBLOCK;
+        return -1;
+    }
+    return received;
+}
+*/
+
+/* Blocking implementation */
+ssize_t _read(int fd, void * data, size_t size)
+{
+    (void)fd;
+    char* cdata = (char*) data;
+    size_t received;
+    for (received = 0; received < size; ++received) {
+        int status = uart_rx_one_char((uint8_t*) &cdata[received]);
+        if (status != 0) {
+            if (received != 0) break;
+            else --received;
+        }
+    }
+    return received;
+}
+
 void _exit(int exit_code)
 {
     while (true) {
