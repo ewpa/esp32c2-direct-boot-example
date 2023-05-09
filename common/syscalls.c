@@ -2,14 +2,18 @@
 #include <stdbool.h>
 #include "romfuncs.h"
 
-ssize_t _write(int fildes, const void *buf, size_t nbyte)
+ssize_t _write(int fd, const void * data, size_t size)
 {
-    (void)fildes;
-    const uint8_t *cbuf = (const uint8_t *) buf;
-    for (size_t i = 0; i < nbyte; ++i) {
-        uart_tx_one_char(cbuf[i]);
+    (void)fd;
+    const char* cdata = (const char*) data;
+    for (size_t i = 0; i < size; ++i) {
+        if (cdata[i] == '\n')
+        {
+            uart_tx_one_char('\r');
+        }
+        uart_tx_one_char(cdata[i]);
     }
-    return nbyte;
+    return size;
 }
 
 void _exit(int exit_code)
