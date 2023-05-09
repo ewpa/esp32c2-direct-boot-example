@@ -4,6 +4,7 @@ list(APPEND srcs
     "start.S"
     "vectors.S"
     "syscalls.c"
+    "wdt.c"
     )
 
 add_library(common STATIC ${srcs})

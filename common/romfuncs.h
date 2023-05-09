@@ -8,4 +8,4 @@
 
 #pragma once
 
-extern int uart_tx_one_char(uint8_t c);
+extern int uart_tx_one_char(unsigned char c);

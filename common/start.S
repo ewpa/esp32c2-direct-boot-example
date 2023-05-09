@@ -50,6 +50,7 @@ _start:
     call    __libc_init_array       # Run global initialization functions
 
     call    syscalls_init
+    call    wdt_disable
 
     /* Call main */
     la      a0, _main_argc

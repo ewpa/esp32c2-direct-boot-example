@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 #define BIT(x) (1UL << (x))
 #define REG(x) ((volatile uint32_t *) (x))
 
