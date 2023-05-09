@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
-
-extern int uart_tx_one_char(uint8_t c);
+#include "romfuncs.h"
+#include "wdt.h"
 
 ssize_t _write(int fildes, const void *buf, size_t nbyte)
 {
@@ -22,4 +22,5 @@ void _exit(int exit_code)
 
 void syscalls_init(void)
 {
+    wdt_disable();
 }
