@@ -9,6 +9,8 @@ add_executable(hello_world hello_world.c)
 
 add_subdirectory(${ROOT_DIR}/common common)
 target_link_libraries(hello_world PRIVATE common)
+# Force linking of _write from syscalls.c
+target_link_options(hello_world PUBLIC -Wl,--undefined=_write)
 
 target_compile_options(hello_world PUBLIC -Wall -Werror -Wextra)
 
