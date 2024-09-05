@@ -1,7 +1,7 @@
 // Copyright (c) 2021 Cesanta
 // All rights reserved
 #include "soc.h"
-#define ESP32C3
+#define ESP32C2
 #if defined(ESP32C3)
 #define RTC_CNTL_WDTCONFIG0_REG REG(0x60008090)
 #define RTC_CNTL_WDTWPROTECT_REG REG(0x600080a8)
@@ -15,6 +15,19 @@ void wdt_disable(void) {
   REG(C3_RTCCNTL)[45] = 0;
 
   REG(C3_TIMERGROUP0)[18] &= BIT(31);  // Disable WDT
+}
+#elif defined(ESP32C2)
+#define RTC_CNTL_WDTCONFIG0_REG REG(0x60008084)
+#define RTC_CNTL_WDTWPROTECT_REG REG(0x6000809c)
+void wdt_disable(void) {
+  RTC_CNTL_WDTWPROTECT_REG[0] = 0x50d83aa1;  // Disable write protection
+  RTC_CNTL_WDTCONFIG0_REG[0] &= BIT(31);     // Disable RTC WDT
+
+  // bootloader_super_wdt_auto_feed()
+  REG(0x600080a4)[0] = 0x8F1D312A;
+  REG(0x600080a0)[0] |= BIT(30);
+
+  REG(0x6001f048)[0] &= BIT(31);  // Disable MWDT
 }
 #elif defined(ESP32)
 #define RTC_CNTL_WDTCONFIG0_REG REG(0X3ff4808c)
