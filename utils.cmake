@@ -7,9 +7,9 @@ function(__add_linker_script_and_dep target ldscript)
 endfunction()
 
 function(add_linker_scripts target)
-    __add_linker_script_and_dep(${target} esp32c3.ld)
+    __add_linker_script_and_dep(${target} esp32c2.ld)
     __add_linker_script_and_dep(${target} common.ld)
-    __add_linker_script_and_dep(${target} romfuncs.ld)
+    __add_linker_script_and_dep(${target} esp32c2.rom.ld)
 endfunction()
 
 function(add_map_file target filename)
