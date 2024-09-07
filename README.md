@@ -1,21 +1,21 @@
-# ESP32-C3 Direct Boot example
+# ESP32-C2/ESP8684 Direct Boot example
 
-This is an example of ESP32-C3 "direct boot" feature. It allows an application to be executed directly from flash, without using the 2nd stage bootloader.
+This is an example of ESP32-C2/ESP8684 "direct boot" feature. It allows an application to be executed directly from flash, without using the 2nd stage boot loader.
 
 ## Background
 
-ESP8266 and ESP32 series of chips share the common [binary image format](https://github.com/espressif/esptool/wiki/Firmware-Image-Format). This format describes how the binary image stored in flash should be loaded into IRAM/DRAM by the ROM bootloader. In typical applications, the ROM bootloader doesn't load the application binary directly. Instead, it loads the 2nd stage bootloader into RAM. The 2nd stage bootloader then loads the application: sections which should reside in RAM are copied from flash into RAM, and cache MMU is configured to map the remaining sections, which are accessed from flash.
+ESP8266 and ESP32 series of chips share the common [binary image format](https://docs.espressif.com/projects/esptool/en/latest/esp32/advanced-topics/firmware-image-format.html). This format describes how the binary image stored in flash should be loaded into IRAM/DRAM by the ROM bootloader. In typical applications, the ROM bootloader doesn't load the application binary directly. Instead, it loads the 2nd stage bootloader into RAM. The 2nd stage bootloader then loads the application: sections which should reside in RAM are copied from flash into RAM, and cache MMU is configured to map the remaining sections, which are accessed from flash.
 
 Compared to other microcontrollers, where the program in flash is executed directly without the need for additional stages of bootloaders, this arrangement does add complexity. However, it should be noted that in most production applications the 2nd stage bootloader is required to support firmware update, rollback, and security features. Because of this, the 2nd stage bootloader is used in ESP-IDF, despite the extra complexity.
 
-## Direct boot in ESP32-C3
+## Direct boot in ESP32-C2/ESP8684
 
-ESP32-C3 (starting from silicon revision 3) allows an application stored in flash to be executed directly, without being copied into RAM. This makes it possible to link an application with a relatively simple linker script, and produce the binary using `objcopy` command, then flash the resulting binary to the ESP32-C3.
+ESP32-C2 allows an application stored in flash to be executed directly, without being copied into RAM. This makes it possible to link an application with a relatively simple linker script, and produce the binary using `objcopy` command, then flash the resulting binary to the ESP32-C2.
 
 Direct boot feature is activated under the following conditions:
 * Secure boot is disabled.
 * Direct boot feature is not disabled via `EFUSE_DIS_LEGACY_SPI_BOOT` eFuse bit.
-* The ROM bootloader doesn't detect a valid binary image [in the usual format](https://github.com/espressif/esptool/wiki/Firmware-Image-Format)
+* The ROM bootloader doesn't detect a valid binary image [in the usual format](https://docs.espressif.com/projects/esptool/en/latest/esp32/advanced-topics/firmware-image-format.html)
 * The first 8 bytes in flash are `1d 04 db ae 1d 04 db ae` — that is a "magic number" 0xaedb041d repeated twice.
 
 In this case, the ROM bootloader sets up Flash MMU to map 4 MB of Flash to addresses 0x42000000 (for code execution) and 0x3C000000 (for read-only data access). The bootloader then jumps to address 0x42000008, i.e. to the instruction at offset 8 in flash, immediately after the magic numbers.
@@ -41,7 +41,7 @@ Use it if all of the below are true:
 * The code doesn't fit into RAM, therefore execution from flash is required.
 * Dependency on the ESP-specific binary image format or the ESP-IDF 2nd stage bootloader is undesirable.
 
-This feature can also be useful in an educational context to "hide" the added complexity of ESP32-C3 Flash MMU and cache configuration.
+This feature can also be useful in an educational context to "hide" the added complexity of ESP32-C2 Flash MMU and cache configuration.
 
 ## Alternatives to direct boot
 
@@ -55,9 +55,9 @@ If the entire application code is small enough to fit into RAM, then the direct 
 
 This example contains the following parts:
 
-* [common/](common/) directory with the application entrypoint, placeholder for the vector table, and a simple implementation of `_write` syscall.
+* [common/](common/) directory with the application entrypoint, placeholder for the vector table, and a simple implementation of `_write`, `_read` and `_exit` syscalls.
 * [ld/](ld/) directory with the linker scripts.
-* [examples/hello_world/](examples/hello_world/) directory with the minimal example project.
+* [examples/hello_world/](examples/hello_world/) and [examples/blink/](examples/blink/) directories with the minimal example projects.
 
 ## Building and running the example
 
@@ -77,7 +77,7 @@ This example contains the following parts:
    copy from `hello_world' [elf32-littleriscv] to `hello_world.bin' [binary]
    [3/3] Running utility command for hello_world-size
    text	   data	    bss	    dec	    hex	filename
-   7352	    128	    160	   7640	   1dd8	hello_world
+   7632	    136	    160	   7928	   1ef8	hello_world
    ```
    The following files will be generated:
    - `hello_world` — ELF output file
@@ -85,27 +85,25 @@ This example contains the following parts:
    - `hello_world.map` — linker map file
 3. Flash the example using [esptool](https://pypi.org/project/esptool/):
    ```bash
-   esptool.py --port /dev/ttyUSB0 --baud 921600 write_flash 0x0000 hello_world.bin
+   esptool.py --chip esp32c2 --baud 1500000 write_flash 0 hello_world.bin
    ```
-   (Adjust the serial port name as needed.)
 4. See the serial output, for example using `miniterm.py` (assuming `pyserial` is installed):
    ```bash
-   python -m serial.tools.miniterm /dev/ttyUSB0 115200
+   python -m serial.tools.miniterm /dev/ttyUSB0 74880
    ```
    You should see the following output:
    ```
-   ESP-ROM:esp32c3-api1-20210207
-   Build:Feb  7 2021
+   ESP-ROM:esp8684-api2-20220127
+   Build:Jan 27 2022
    rst:0x1 (POWERON),boot:0xc (SPI_FAST_FLASH_BOOT)
    Hello, world!
    ```
-   The output will keep repeating with reset reasons such as `TG0WDT_SYS_RST`, `RTCWDT_RTC_RST` — this is because this example doesn't disable or feed the hardware watchdog timers.
 
 ## Memory layout
 
 The following diagram illustrates the run-time memory layout and binary image layout when direct boot is used.
 
-![img/esp32c3-directboot.svg](img/esp32c3-directboot.svg)
+![img/esp32c2-directboot.svg](img/esp32c2-directboot.svg)
 
 The sections shown in blue on the left are parts of the flash image.
 
@@ -113,6 +111,6 @@ ROM bootloader maps the 0 – 4 MB region of flash to the CPU address space twic
 
 As it is obvious from the diagram, some parts of this mapping are unnecessary. These parts are shown in gray on the right. For example, `.text` section gets mapped not only to the IROM, but also to DROM, even though code execution only happens through IROM.
 
-Such uniform mapping was chosen simply because it is universal, and can be set up by the ROM code without any prior knowledge about the application being loaded. This mapping isn't in any way a limitation of ESP32-C3 cache hardware; for example, ESP-IDF 2nd stage bootloader maps only those regions which are necessary in the given part of the address space.
+Such uniform mapping was chosen simply because it is universal, and can be set up by the ROM code without any prior knowledge about the application being loaded. This mapping isn't in any way a limitation of ESP32-C2 cache hardware; for example, ESP-IDF 2nd stage bootloader maps only those regions which are necessary in the given part of the address space.
 
 The run-time memory layout and flash binary image layout shown above are achieved in the linker script ([ld/common.ld](ld/common.ld)) by specifying the LMAs (load addresses). LMAs start at 0, and match the addresses in flash. VMAs for IROM (`entry` and `.text`) and DROM (`.rodata`) sections are set in such a way that LMA == VMA - BASE, where *BASE* is the starting address of IROM or DROM. Non-cached `.data` section is then added at the next available LMA.
